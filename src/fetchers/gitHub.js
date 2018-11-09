@@ -1,4 +1,4 @@
-import {apiFetch, apiFetchAllPages} from '../util/apiFetch'
+import { apiFetch, apiFetchAllPages } from '../util/apiFetch'
 
 function headers(token) {
   return {
@@ -9,27 +9,36 @@ function headers(token) {
 }
 
 function apiURL(path, params = {}) {
-  return {base: 'https://api.github.com', path, queryParams: params}
+  return { base: 'https://api.github.com', path, queryParams: params }
 }
 
 export function getIssue(token, owner, repoName, issueNumber) {
   const issueUrl = apiURL(`/repos/${owner}/${repoName}/issues/${issueNumber}`)
-  return apiFetch(issueUrl, {headers: headers(token)})
+  return apiFetch(issueUrl, { headers: headers(token) })
 }
 
 export function queryIssues(token, owner, repoName, issueQuery) {
-  const issueUrl = apiURL('/search/issues', {q: issueQuery + ` repo:${owner}/${repoName} type:issue`, sort: 'created', order: 'asc'})
-  return apiFetchAllPages(issueUrl, {headers: headers(token)})
+  const issueUrl = apiURL('/search/issues', { q: issueQuery + ` repo:${owner}/${repoName} type:issue`, sort: 'created', order: 'asc' })
+  return apiFetchAllPages(issueUrl, { headers: headers(token) })
 }
 
 export function getCommentsForIssue(token, owner, repoName, issueNumber) {
   const commentsUrl = apiURL(`/repos/${owner}/${repoName}/issues/${issueNumber}/comments`)
-  return apiFetchAllPages(commentsUrl, {headers: headers(token)})
+  return apiFetchAllPages(commentsUrl, { headers: headers(token) })
 }
 
 export function getLabelsForIssue(token, owner, repoName, issueNumber) {
   const labelsUrl = apiURL(`/repos/${owner}/${repoName}/issues/${issueNumber}/labels`)
-  return apiFetchAllPages(labelsUrl, {headers: headers(token)})
+  return apiFetchAllPages(labelsUrl, { headers: headers(token) })
+}
+
+export function updateLabelsForIssue(token, owner, repoName, issueNumber, label) {
+  const labelsUrl = apiURL(`/repos/${owner}/${repoName}/issues/${issueNumber}/labels`)
+  return apiFetch(labelsUrl, {
+    method: 'POST',
+    headers: headers(token),
+    body: JSON.stringify(label),
+  })
 }
 
 export function createIssue(token, owner, repoName, issue) {

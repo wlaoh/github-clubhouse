@@ -1,18 +1,18 @@
 import Bluebird from 'bluebird'
 
-import {getIssue, queryIssues, getCommentsForIssue, getLabelsForIssue, createIssue, createIssueComment} from './fetchers/gitHub'
-import {getStory, listUsers, listProjects, listWorkflows, createStory} from './fetchers/clubhouse'
-import {parseClubhouseStoryURL, parseGithubRepoURL} from './util/urlParse'
-import {log, logAppend} from './util/logging'
+import { getIssue, queryIssues, getCommentsForIssue, getLabelsForIssue, updateLabelsForIssue, createIssue, createIssueComment } from './fetchers/gitHub'
+import { getStory, listUsers, listProjects, listWorkflows, createStory } from './fetchers/clubhouse'
+import { parseClubhouseStoryURL, parseGithubRepoURL } from './util/urlParse'
+import { log, logAppend } from './util/logging'
 
-export {saveConfig, loadConfig} from './util/config'
+export { saveConfig, loadConfig } from './util/config'
 
 export async function clubhouseStoryToGithubIssue(clubhouseStoryURL, githubRepoURL, options = {}) {
   _assertOption('githubToken', options)
   _assertOption('clubhouseToken', options)
 
-  const {storyId} = parseClubhouseStoryURL(clubhouseStoryURL)
-  const {owner, repo} = parseGithubRepoURL(githubRepoURL)
+  const { storyId } = parseClubhouseStoryURL(clubhouseStoryURL)
+  const { owner, repo } = parseGithubRepoURL(githubRepoURL)
 
   const clubhouseUsers = await listUsers(options.clubhouseToken)
   const clubhouseUsersById = clubhouseUsers.reduce((acc, user) => {
@@ -50,8 +50,10 @@ export async function githubIssueToClubhouseStory(options) {
   // simply use the first 'unstarted' and 'done' states of the first workflow
   const clubhouseWorkflows = await listWorkflows(options.clubhouseToken)
   // log("clubhouseWorkflows", clubhouseWorkflows)
-  const stateId = {open: clubhouseWorkflows[0].states.find(state => state.type === 'unstarted').id,
-    done: clubhouseWorkflows[0].states.find(state => state.type === 'done').id}
+  const stateId = {
+    open: clubhouseWorkflows[0].states.find(state => state.type === 'unstarted').id,
+    done: clubhouseWorkflows[0].states.find(state => state.type === 'done').id
+  }
   // log("stateId", stateId)
 
   log('Fetch Clubhouse projects')
@@ -62,7 +64,7 @@ export async function githubIssueToClubhouseStory(options) {
     throw new Error(`The '${options.clubhouseProject}' project wasn't found in your Clubhouse`)
   }
 
-  const {id: projectId} = project
+  const { id: projectId } = project
 
   const [owner, repo] = options.githubRepo.split('/')
 
@@ -100,6 +102,10 @@ export async function githubIssueToClubhouseStory(options) {
     if (!options.dryRun) {
       const story = await createStory(options.clubhouseToken, unsavedStory)
       logAppend(`Clubhouse #${story.id} ${story.name}`)
+      if ('transitionedLabel' in options) {
+        const transitionedLabel = { labels: ['CH'] }
+        await updateLabelsForIssue(options.githubToken, owner, repo, issue.number, transitionedLabel)
+      }
       count += 1
     } else {
       logAppend('Not creating story for: ', issue.title)
@@ -133,15 +139,15 @@ function _mapUser(clubhouseUsersByName, githubUsername, userMappings) {
     return clubhouseUsersByName[username].id
   }
 
-    // username not found
-    // log("Warning, user missing from Clubhouse:", username)
-    // log("Object.keys(clubhouseUsersByName)", Object.keys(clubhouseUsersByName))
+  // username not found
+  // log("Warning, user missing from Clubhouse:", username)
+  // log("Object.keys(clubhouseUsersByName)", Object.keys(clubhouseUsersByName))
 
-    // '*' can be used to define the default username
+  // '*' can be used to define the default username
   if ('*' in userMappings && userMappings['*'] in clubhouseUsersByName) {
     username = userMappings['*']
   } else {
-      // othwerwise just pick the first one...
+    // othwerwise just pick the first one...
     username = Object.keys(clubhouseUsersByName)[0]
   }
 
@@ -207,7 +213,7 @@ function _storyToIssue(clubhouseStoryURL, story) {
 
 function _presentClubhouseComments(comments, clubhouseUsersById) {
   return comments.map(comment => {
-    const user = clubhouseUsersById[comment.author_id] || {username: comment.author_id}
+    const user = clubhouseUsersById[comment.author_id] || { username: comment.author_id }
     return {
       body: `**[Comment from Clubhouse user @${user.username}:]** ${comment.text}`
     }

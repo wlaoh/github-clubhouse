@@ -47,10 +47,10 @@ function run() {
   //console.log(options)
 
   githubIssueToClubhouseStory(options)
-    .then(function(count) {
+    .then(function (count) {
       console.info(`\nImported ${count} stories`)
     })
-    .catch(function(err) {
+    .catch(function (err) {
       console.error(err)
     })
 }
@@ -79,7 +79,8 @@ function _usage() {
     '  --clubhouse-project=PROJECT  your Clubhouse project name\n' +
     '  --user-map=JSON-USER_MAP     json object of gh-user:clubhouse-user mappings\n' +
     '                                   use "*" for default\n' +
-    '                                   e.g. \'{"my_gh_id":"my_ch_id", "*":"default_id"}\'\n'
+    '                                   e.g. \'{"my_gh_id":"my_ch_id", "*":"default_id"}\'\n' +
+    '  --transitionedLabel          applies the label "CH" to all transitioned issues\n'
 }
 
 function _loadAndOrSaveOptions(args) {
